@@ -1,7 +1,9 @@
+import time
+
 import requests
 from bs4 import BeautifulSoup
-import time
-from utils.logger_config import logger
+
+from src.utils.logger_config import logger
 
 
 def scrape_eurogamer_review(url):
@@ -45,8 +47,18 @@ def scrape_eurogamer_review(url):
             )
 
             article_body = soup.find("article") or soup
-            paragraphs = article_body.find_all("p")
 
+            rating = article_body.find(class_="review_rating")
+            if rating and rating.has_attr("data-value"):
+                try:
+                    rating_value = int(rating["data-value"])
+                except (ValueError, TypeError):
+                    logger.warning("Failed to convert rating to integer.")
+            else:
+                rating_value = None
+                logger.warning("No rating found or missing 'data-value' attribute.")
+
+            paragraphs = article_body.find_all("p")
             valid_paragraphs = []
             for p in paragraphs:
                 text = p.get_text(strip=True)
@@ -66,8 +78,10 @@ def scrape_eurogamer_review(url):
             return {
                 "title": title,
                 "subtitle": subtitle,
+                "rating": rating_value,
                 "content": valid_paragraphs,
                 "url": url,
+                "web": "eurogamer",
             }
 
         elif response.status_code == 403:
@@ -159,18 +173,15 @@ def get_links_multiple_pages(base_url, pages_to_scrape=3):
     return list(all_links)
 
 
-if __name__ == "__main__":
+def scrape_eurogamer():
     reviews_section_url = "https://www.eurogamer.net/reviews"
 
     url_list = get_links_multiple_pages(reviews_section_url, 3)
 
-    test_limit = 18
-    urls_to_scrape = url_list[:test_limit]
-
     all_reviews = []
 
-    for i, url in enumerate(urls_to_scrape, 1):
-        logger.info(f"--- Processing review {i}/{len(urls_to_scrape)} ---")
+    for i, url in enumerate(url_list, 1):
+        logger.info(f"--- Processing review {i}/{len(url_list)} ---")
 
         review_data = scrape_eurogamer_review(url)
 
@@ -182,3 +193,4 @@ if __name__ == "__main__":
         time.sleep(3)
 
     logger.success(f"Process finished. Total reviews collected: {len(all_reviews)}")
+    return all_reviews

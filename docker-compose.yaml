@@ -1,0 +1,22 @@
+services:
+  pgvector-db:
+    image: pgvector/pgvector:pg16
+    container_name: pgvector-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=game_review
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    networks:
+      - agent_network
+    restart: unless-stopped
+
+volumes:
+  pgvector_data:
+
+networks:
+  agent_network:
+    driver: bridge

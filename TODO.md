@@ -1,0 +1,3 @@
+- [ ] implement postgre + pgvector
+- [ ] Think about possible questions to make for metadata extraction
+- [ ] Start thinking about RAG system and agent
