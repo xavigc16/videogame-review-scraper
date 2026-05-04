@@ -1,21 +1,18 @@
 services:
-  pgvector-db:
-    image: pgvector/pgvector:pg16
-    container_name: pgvector-db
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=mysecretpassword
-      - POSTGRES_DB=game_review
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
     ports:
-      - "5432:5432"
+      - "6333:6333"
+      - "6334:6334"
     volumes:
-      - pgvector_data:/var/lib/postgresql/data
+      - qdrant_storage:/qdrant/storage
     networks:
       - agent_network
     restart: unless-stopped
 
 volumes:
-  pgvector_data:
+  qdrant_storage:
 
 networks:
   agent_network:
