@@ -23,23 +23,41 @@ def scrape_eurogamer_review(url):
 
             page_text = soup.get_text().lower()
 
-            has_game_details = "developer:" in page_text and "publisher:" in page_text
-            details_box = soup.find(class_="game-details") or soup.find(
-                class_="info-box"
-            )
-
-            if not has_game_details and not details_box:
-                logger.warning(
-                    f"Discarded: No video game details found (Developer/Publisher). Likely hardware -> {url}"
-                )
-                return None
-
             title_tag = soup.find("h1")
             title = title_tag.get_text(strip=True) if title_tag else None
             if not title:
                 logger.warning("No title found (missing <h1> tag).")
             else:
                 logger.info(f"Title extracted: {title}")
+
+            has_game_details = "developer:" in page_text and "publisher:" in page_text
+            details_box = soup.find(class_="game-details") or soup.find(
+                class_="info-box"
+            )
+
+            if not has_game_details and not details_box:
+                hardware_terms = (
+                    "hardware",
+                    "mouse",
+                    "keyboard",
+                    "headset",
+                    "monitor",
+                    "gpu",
+                    "cpu",
+                )
+                title_text = (title or "").lower()
+                is_hardware_review = any(
+                    term in title_text or term in url.lower() for term in hardware_terms
+                )
+                if is_hardware_review:
+                    logger.warning(
+                        f"Discarded: No video game details found and hardware terms matched -> {url}"
+                    )
+                    return None
+
+                logger.warning(
+                    f"No video game details found; keeping likely review page anyway -> {url}"
+                )
 
             subtitle_tag = soup.find("h2") or soup.select_one(".strapline, .subtitle")
             subtitle = (
@@ -49,13 +67,13 @@ def scrape_eurogamer_review(url):
             article_body = soup.find("article") or soup
 
             rating = article_body.find(class_="review_rating")
+            rating_value = None
             if rating and rating.has_attr("data-value"):
                 try:
                     rating_value = int(rating["data-value"])
                 except (ValueError, TypeError):
                     logger.warning("Failed to convert rating to integer.")
             else:
-                rating_value = None
                 logger.warning("No rating found or missing 'data-value' attribute.")
 
             paragraphs = article_body.find_all("p")
@@ -123,7 +141,7 @@ def get_links_multiple_pages(base_url, pages_to_scrape=3):
         else:
             current_url = f"{base_url}?page={page}"
 
-        logger.info(f"🔍 Exploring index: {current_url}")
+        logger.info(f"Exploring index: {current_url}")
 
         try:
             response = requests.get(current_url, headers=headers, timeout=10)
@@ -170,7 +188,7 @@ def get_links_multiple_pages(base_url, pages_to_scrape=3):
 
         time.sleep(2)
 
-    return list(all_links)
+    return sorted(all_links)
 
 
 def scrape_eurogamer():
