@@ -13,6 +13,21 @@ dependencies = [
     "requests>=2.32.5",
 ]
 
+[project.scripts]
+qdrant-check = "src.utils.qdrant.inspect_db:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
 [tool.mypy]
 explicit_package_bases = true
 ignore_missing_imports = true
