@@ -1,3 +1,4 @@
 - [ ] implement Qdrant ingestion
 - [ ] Think about possible questions to make for metadata extraction
 - [ ] Start thinking about RAG system and agent
+- [ ] Check if game name is correctly extracted

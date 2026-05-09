@@ -1,8 +1,14 @@
+import os
+from pathlib import Path
+
 from fastembed import SparseTextEmbedding, TextEmbedding
 from qdrant_client import models
 
-from src.crawlers.eurogamer.eurogamer_crawler import (
+from src.crawlers.eurogamer_crawler import (
     scrape_eurogamer,
+)
+from src.crawlers.ign_crawler import (
+    scrape_ign,
 )
 from src.utils.qdrant.db_connection import (
     build_points,
@@ -14,6 +20,23 @@ from src.utils.qdrant.db_connection import (
 
 DENSE_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 SPARSE_MODEL_NAME = "Qdrant/bm25"
+FASTEMBED_CACHE_DIR = Path(
+    os.getenv("FASTEMBED_CACHE_PATH", Path.cwd() / ".cache" / "fastembed")
+)
+
+
+def configure_model_cache() -> None:
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
+    if os.name != "nt":
+        return
+
+    try:
+        import huggingface_hub.file_download as hf_file_download
+    except ImportError:
+        return
+
+    hf_file_download.are_symlinks_supported = lambda cache_dir=None: False
 
 
 def extract_game_name(review):
@@ -29,10 +52,15 @@ def extract_game_name(review):
 
 
 def main():
+    configure_model_cache()
     ensure_collection()
-    reviews = scrape_eurogamer()
-    dense_model = TextEmbedding(DENSE_MODEL_NAME)
-    sparse_model = SparseTextEmbedding(SPARSE_MODEL_NAME)
+    eurogamer_reviews = scrape_eurogamer()
+    ign_reviews = scrape_ign()
+    reviews = eurogamer_reviews + ign_reviews
+    dense_model = TextEmbedding(DENSE_MODEL_NAME, cache_dir=str(FASTEMBED_CACHE_DIR))
+    sparse_model = SparseTextEmbedding(
+        SPARSE_MODEL_NAME, cache_dir=str(FASTEMBED_CACHE_DIR)
+    )
 
     for review in reviews:
         paragraphs = review["content"]
