@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 from fastembed import SparseTextEmbedding, TextEmbedding
@@ -23,6 +24,14 @@ SPARSE_MODEL_NAME = "Qdrant/bm25"
 FASTEMBED_CACHE_DIR = Path(
     os.getenv("FASTEMBED_CACHE_PATH", Path.cwd() / ".cache" / "fastembed")
 )
+GAME_NAME_PATTERNS = (
+    re.compile(r"^an[áa]lisis de\s+(.+?)(?:\s+-\s+.*|:\s+.*)?$", re.IGNORECASE),
+    re.compile(
+        r"^(.+?)\s+(?:early access\s+)?review(?:\s*[-:]\s*.*)?$",
+        re.IGNORECASE,
+    ),
+    re.compile(r"^(.+?)\s*[-:]\s*review(?:\s*[-:]\s*.*)?$", re.IGNORECASE),
+)
 
 
 def configure_model_cache() -> None:
@@ -39,16 +48,22 @@ def configure_model_cache() -> None:
     hf_file_download.are_symlinks_supported = lambda cache_dir=None: False
 
 
-def extract_game_name(review):
-    title = review.get("title") or ""
-    subtitle = review.get("subtitle") or ""
-    source = title or subtitle
+def normalize_game_name(value: str) -> str:
+    return " ".join(value.strip(" -:").split())
 
-    for suffix in (" review", " - review"):
-        if source.lower().endswith(suffix):
-            return source[: -len(suffix)].strip()
 
-    return source.strip() or "Unknown game"
+def extract_game_name(review: dict) -> str:
+    title = normalize_game_name(review.get("title") or "")
+    if not title:
+        return "Unknown game"
+
+    for pattern in GAME_NAME_PATTERNS:
+        match = pattern.match(title)
+        if match:
+            game_name = normalize_game_name(match.group(1))
+            return game_name or "Unknown game"
+
+    return title
 
 
 def main():

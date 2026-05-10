@@ -43,6 +43,23 @@ def ensure_collection() -> None:
     )
 
 
+def build_metadata(*, review: dict, game_name: str) -> dict:
+    metadata = {
+        "title": review.get("title"),
+        "subtitle": review.get("subtitle"),
+        "game_name": game_name,
+        "rating": review.get("rating"),
+        "url": review.get("url"),
+        "web": review.get("web"),
+    }
+
+    review_metadata = review.get("metadata")
+    if isinstance(review_metadata, dict):
+        metadata.update(review_metadata)
+
+    return metadata
+
+
 def build_points(
     *,
     review: dict,
@@ -70,6 +87,7 @@ def build_points(
                     "rating": review["rating"],
                     "url": review["url"],
                     "web": review["web"],
+                    "metadata": build_metadata(review=review, game_name=game_name),
                     "review_chunk": paragraph,
                     "chunk_index": chunk_index,
                 },
