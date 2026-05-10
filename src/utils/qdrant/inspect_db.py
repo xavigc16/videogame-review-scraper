@@ -217,6 +217,7 @@ def format_point(point: Any) -> dict[str, Any]:
         "rating": payload.get("rating"),
         "web": payload.get("web"),
         "url": payload.get("url"),
+        "metadata": payload.get("metadata"),
         "chunk_index": payload.get("chunk_index"),
         "review_chunk": payload.get("review_chunk"),
     }

@@ -46,10 +46,10 @@ Filter by source and rating:
 uv run qdrant-check browse --source eurogamer --rating 4 --limit 5
 ```
 
-Filter by exact game name:
+Filter by exact clean game name:
 
 ```bash
-uv run qdrant-check browse --game "Lego Voyagers review - sticking together even when miles apart"
+uv run qdrant-check browse --game "Lego Voyagers"
 ```
 
 Print matching points as JSON:
@@ -86,7 +86,7 @@ uv run qdrant-check search "space adventure game" --json --limit 2
 - `--limit <number>`: maximum number of points to return. Default: `10`.
 - `--source <name>`: filter by the `web` payload field, for example `eurogamer`
   or `ign`.
-- `--game <name>`: filter by exact `game_name` payload value.
+- `--game <name>`: filter by exact clean `game_name` payload value.
 - `--rating <number>`: filter by exact numeric `rating` payload value.
 - `--json`: print results as JSON instead of readable terminal text.
 
@@ -103,3 +103,6 @@ Readable output includes:
 - URL
 - chunk index
 - shortened review chunk text
+
+JSON output also includes `metadata`, a nested object for review and game
+metadata such as `title`, `subtitle`, `game_name`, `rating`, `url`, and `web`.
