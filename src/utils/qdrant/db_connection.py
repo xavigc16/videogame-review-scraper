@@ -43,21 +43,49 @@ def ensure_collection() -> None:
     )
 
 
-def build_metadata(*, review: dict, game_name: str) -> dict:
-    metadata = {
-        "title": review.get("title"),
-        "subtitle": review.get("subtitle"),
-        "game_name": game_name,
-        "rating": review.get("rating"),
-        "url": review.get("url"),
-        "web": review.get("web"),
-    }
-
+def build_metadata(
+    *,
+    review: dict,
+    game_name: str,
+    chunk_index: int,
+    chunk_count: int,
+) -> dict:
     review_metadata = review.get("metadata")
-    if isinstance(review_metadata, dict):
-        metadata.update(review_metadata)
+    metadata = dict(review_metadata) if isinstance(review_metadata, dict) else {}
+
+    metadata.update(
+        {
+            "title": review.get("title"),
+            "subtitle": review.get("subtitle"),
+            "game_name": game_name,
+            "rating": review.get("rating"),
+            "url": review.get("url"),
+            "web": review.get("web"),
+            "chunk_index": chunk_index,
+            "chunk_count": chunk_count,
+        }
+    )
 
     return metadata
+
+
+def build_payload(
+    *,
+    review: dict,
+    game_name: str,
+    paragraph: str,
+    chunk_index: int,
+    chunk_count: int,
+) -> dict:
+    return {
+        "review_chunk": paragraph,
+        "metadata": build_metadata(
+            review=review,
+            game_name=game_name,
+            chunk_index=chunk_index,
+            chunk_count=chunk_count,
+        ),
+    }
 
 
 def build_points(
@@ -69,6 +97,7 @@ def build_points(
     sparse_embeddings: Iterable[models.SparseVector],
 ) -> list[models.PointStruct]:
     points = []
+    chunk_count = len(paragraphs)
     for chunk_index, (paragraph, dense_embedding, sparse_embedding) in enumerate(
         zip(paragraphs, dense_embeddings, sparse_embeddings, strict=True)
     ):
@@ -81,16 +110,13 @@ def build_points(
                     settings.dense_vector_name: dense_embedding,
                     settings.sparse_vector_name: sparse_embedding,
                 },
-                payload={
-                    "title": review["title"],
-                    "game_name": game_name,
-                    "rating": review["rating"],
-                    "url": review["url"],
-                    "web": review["web"],
-                    "metadata": build_metadata(review=review, game_name=game_name),
-                    "review_chunk": paragraph,
-                    "chunk_index": chunk_index,
-                },
+                payload=build_payload(
+                    review=review,
+                    game_name=game_name,
+                    paragraph=paragraph,
+                    chunk_index=chunk_index,
+                    chunk_count=chunk_count,
+                ),
             )
         )
 

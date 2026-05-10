@@ -94,7 +94,7 @@ def build_filter(args: argparse.Namespace) -> models.Filter | None:
     if args.source:
         conditions.append(
             models.FieldCondition(
-                key="web",
+                key="metadata.web",
                 match=models.MatchValue(value=args.source),
             )
         )
@@ -102,7 +102,7 @@ def build_filter(args: argparse.Namespace) -> models.Filter | None:
     if args.game:
         conditions.append(
             models.FieldCondition(
-                key="game_name",
+                key="metadata.game_name",
                 match=models.MatchValue(value=args.game),
             )
         )
@@ -110,7 +110,7 @@ def build_filter(args: argparse.Namespace) -> models.Filter | None:
     if args.rating is not None:
         conditions.append(
             models.FieldCondition(
-                key="rating",
+                key="metadata.rating",
                 match=models.MatchValue(value=args.rating),
             )
         )
@@ -209,16 +209,14 @@ def require_collection() -> None:
 
 def format_point(point: Any) -> dict[str, Any]:
     payload = point.payload or {}
+    metadata = payload.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+
     return {
         "id": str(point.id),
         "score": getattr(point, "score", None),
-        "title": payload.get("title"),
-        "game_name": payload.get("game_name"),
-        "rating": payload.get("rating"),
-        "web": payload.get("web"),
-        "url": payload.get("url"),
-        "metadata": payload.get("metadata"),
-        "chunk_index": payload.get("chunk_index"),
+        "metadata": metadata,
         "review_chunk": payload.get("review_chunk"),
     }
 
@@ -250,15 +248,16 @@ def print_points(points: list[dict[str, Any]]) -> None:
         return
 
     for index, point in enumerate(points, start=1):
-        print(f"[{index}] {point['title'] or 'Untitled'}")
+        metadata = point["metadata"]
+        print(f"[{index}] {metadata.get('title') or 'Untitled'}")
         print(f"ID: {point['id']}")
         if point["score"] is not None:
             print(f"Score: {point['score']}")
-        print(f"Game: {point['game_name'] or 'Unknown game'}")
-        print(f"Rating: {point['rating']}")
-        print(f"Source: {point['web']}")
-        print(f"URL: {point['url']}")
-        print(f"Chunk: {point['chunk_index']}")
+        print(f"Game: {metadata.get('game_name') or 'Unknown game'}")
+        print(f"Rating: {metadata.get('rating')}")
+        print(f"Source: {metadata.get('web')}")
+        print(f"URL: {metadata.get('url')}")
+        print(f"Chunk: {metadata.get('chunk_index')} of {metadata.get('chunk_count')}")
         print("Text:")
         print(
             textwrap.fill(

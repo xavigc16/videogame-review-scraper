@@ -84,10 +84,10 @@ uv run qdrant-check search "space adventure game" --json --limit 2
 `browse` and `search` support the same filtering and output options:
 
 - `--limit <number>`: maximum number of points to return. Default: `10`.
-- `--source <name>`: filter by the `web` payload field, for example `eurogamer`
-  or `ign`.
-- `--game <name>`: filter by exact clean `game_name` payload value.
-- `--rating <number>`: filter by exact numeric `rating` payload value.
+- `--source <name>`: filter by the `metadata.web` payload field, for example
+  `eurogamer` or `ign`.
+- `--game <name>`: filter by exact clean `metadata.game_name` payload value.
+- `--rating <number>`: filter by exact numeric `metadata.rating` payload value.
 - `--json`: print results as JSON instead of readable terminal text.
 
 ## Output Fields
@@ -96,13 +96,15 @@ Readable output includes:
 
 - point ID
 - score, for search results
-- title
-- game name
-- rating
-- source
-- URL
-- chunk index
+- title from `metadata.title`
+- game name from `metadata.game_name`
+- rating from `metadata.rating`
+- source from `metadata.web`
+- URL from `metadata.url`
+- chunk position from `metadata.chunk_index` and `metadata.chunk_count`
 - shortened review chunk text
 
-JSON output also includes `metadata`, a nested object for review and game
-metadata such as `title`, `subtitle`, `game_name`, `rating`, `url`, and `web`.
+Qdrant payloads keep only `review_chunk` at the top level. All review, game,
+and chunk metadata lives in the nested `metadata` object, including `title`,
+`subtitle`, `game_name`, `rating`, `url`, `web`, `chunk_index`, and
+`chunk_count`. JSON output includes `metadata` and `review_chunk`.
